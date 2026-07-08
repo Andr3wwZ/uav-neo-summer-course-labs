@@ -50,6 +50,26 @@ def update(drone):
     # brightness changes and combine the two directions into one edge magnitude. Print the
     # mean magnitude. Advance _timer and finish at HOVER_TIME. See the README (Key terms).
 
+    im = drone.camera.get_downward_image()
+    gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    
+    _timer += drone.get_delta_time()
+
+    blurred = cv2.GaussianBlur(gray_im, (KERNEL_SIZE, KERNEL_SIZE), 0)
+
+    sobel_x = cv2.Sobel(blurred, cv2.CV_64F, dx=1, dy=0, ksize=KERNEL_SIZE)
+
+    sobel_y = cv2.Sobel(blurred, cv2.CV_64F, dx=0, dy=1, ksize=KERNEL_SIZE)
+
+    magnitude = np.sqrt(sobel_x**2 + sobel_y**2)
+
+    mean_magnitude = np.mean(magnitude)
+
+    if _timer >= HOVER_TIME:
+        _done = True
+    print(mean_magnitude)
+    print(_timer)
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done

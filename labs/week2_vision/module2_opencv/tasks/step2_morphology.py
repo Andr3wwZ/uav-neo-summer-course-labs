@@ -55,13 +55,15 @@ def update(drone):
     
     _timer += drone.get_delta_time()
 
-    K = np.ones(KERNEL_SIZE)
+    K = np.ones((KERNEL_SIZE, KERNEL_SIZE), dtype=np.uint8)
 
     opened = cv2.morphologyEx(thresh_im, cv2.MORPH_OPEN, K)
 
     if _timer >= HOVER_TIME:
         _done = True
-    print(np.sum(thresh_im == 255) / thresh_im.size)
+
+    removed = (cv2.countNonZero(thresh_im) - cv2.countNonZero(opened))
+    print("Pixels removed:", removed)
     print(_timer)
     ###### END PUT CODE HERE #########
     ##################################
