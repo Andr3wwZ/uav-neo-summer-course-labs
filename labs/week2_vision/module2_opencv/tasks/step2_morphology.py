@@ -49,6 +49,20 @@ def update(drone):
     # the white-pixel count before and after to see what was removed. Advance _timer and
     # finish once it reaches HOVER_TIME. See the README (Key terms) for morphology.
 
+    im = drone.camera.get_downward_image()
+    gray_im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    _, thresh_im = cv2.threshold(gray_im, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
+    
+    _timer += drone.get_delta_time()
+
+    K = np.ones(KERNEL_SIZE)
+
+    opened = cv2.morphologyEx(thresh_im, cv2.MORPH_OPEN, K)
+
+    if _timer >= HOVER_TIME:
+        _done = True
+    print(np.sum(thresh_im == 255) / thresh_im.size)
+    print(_timer)
     ###### END PUT CODE HERE #########
     ##################################
     return _done
