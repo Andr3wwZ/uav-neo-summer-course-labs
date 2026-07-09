@@ -35,7 +35,8 @@ def fit_line(points):
     np.argwhere, so column = x and row = y. See the README (Key terms) for the fit."""
     ##################################
     #### START PUT CODE HERE #########
-    m, b = 0.0, 0.0
+    m, b = np.polyfit(points[:, 1], points[:, 0], 1)
+
     ###### END PUT CODE HERE #########
     ##################################
     return m, b
@@ -58,6 +59,22 @@ def update(drone):
     # pixel. If there are fewer than MIN_PIXELS, there is not enough edge to fit -> return
     # False. Otherwise call fit_line() and print m, b. Advance _timer and finish at
     # HOVER_TIME.
+
+    image = drone.camera.get_downward_image()
+    im = neo_lab.bright_mask(image, V_MIN)
+    A = np.argwhere(im == 255)
+
+    if len(A) < MIN_PIXELS:
+        return False
+
+    m, b = fit_line(A)
+    print(m, b)
+
+    _timer += drone.get_delta_time()
+    print(_timer)
+
+    if _timer >= HOVER_TIME:
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################

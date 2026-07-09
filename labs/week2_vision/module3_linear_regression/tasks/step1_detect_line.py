@@ -46,7 +46,16 @@ def update(drone):
     # Gate edges glow bright, so threshold by brightness (HSV Value): neo_lab.bright_mask(
     # image, V_MIN) gives a mask of the bright pixels. Count them, and after HOVER_TIME
     # print the count and set _done. See the README (Key terms).
+    image = drone.camera.get_downward_image()
+    im = neo_lab.bright_mask(image, V_MIN)
+    
 
+    if _timer >= HOVER_TIME:
+        print(np.sum(im == 255))
+        _done = True
+
+    _timer += drone.get_delta_time()
+    print(_timer)
     ###### END PUT CODE HERE #########
     ##################################
     return _done
