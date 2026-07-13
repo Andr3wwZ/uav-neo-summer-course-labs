@@ -59,6 +59,34 @@ def update(drone):
     # MAX_TILT. Which sign centers the drone depends on how the camera is mounted --
     # pick a sign, watch which way it runs, and flip it if it diverges. With no gate
     # in view, hold position and reset your centered timer.
+    
+
+    image = drone.camera.get_downward_image()
+
+    bright = neo_lab.largest_bright_contour(image, V_MIN, MIN_AREA)
+
+    if bright is None:
+        _hold = 0
+        drone.flight.send_pcmd(0, 0, 0, 0)
+        return False
+
+    center = uav_utils.get_contour_center(bright)
+
+    row_err = center[0] - ROW_CENTER
+    col_err = center[1] - COL_CENTER
+
+    if abs(row_err) < CENTER_TOL and abs(col_err) < CENTER_TOL:
+        _hold += drone.get_delta_time()
+        drone.flight.send_pcmd(0, 0, 0, 0)
+    else:
+        roll = uav_utils.clamp( (col_err / COL_CENTER) * MAX_TILT, -MAX_TILT, MAX_TILT)
+        pitch = uav_utils.clamp(-(row_err / ROW_CENTER) * MAX_TILT, -MAX_TILT, MAX_TILT)
+        drone.flight.send_pcmd(pitch, roll, 0, 0)
+    
+    print(_hold)
+
+    if _hold >= HOLD_TIME:
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################
