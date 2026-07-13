@@ -50,6 +50,19 @@ def update(drone):
     # when there is no gate -> return False. Otherwise find the contour's bounding box and
     # print it. Advance _timer and finish at HOVER_TIME.
 
+    image = drone.camera.get_color_image()
+
+    gate = neo_lab.largest_cyan_gate(image, MIN_AREA)
+
+    if gate is None:
+        return False
+
+    x, y, w, h = cv2.boundingRect(gate)
+    print("Gate:", x, y, w, h)
+
+    _timer += drone.get_delta_time()
+    _done = _timer > HOVER_TIME
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done
@@ -60,6 +73,7 @@ if __name__ == "__main__":
     _launcher = neo_lab.Launcher(3.0)
 
     def start():
+        
         _launcher.reset()
         reset()
         print("Step 2: Bounding Box")

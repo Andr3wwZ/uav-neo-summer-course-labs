@@ -48,7 +48,17 @@ def update(drone):
     # The gates glow cyan; the wall is blue. A single HSV range (LOWER..UPPER) isolates
     # the gates: convert the forward color image to HSV and build a mask from that range.
     # Report the fraction of masked pixels. Advance _timer and finish at HOVER_TIME.
-    # See the README (Key terms) for HSV masking.
+    # See the README (Key terms) for HSV masking.'
+
+    image = drone.camera.get_color_image()
+    mask = cv2.inRange(image, LOWER, UPPER)
+    ratio = np.count_nonzero(mask) / mask.size
+
+    _timer += drone.get_delta_time()
+
+    print(ratio)
+    
+    _done = _timer > HOVER_TIME
 
     ###### END PUT CODE HERE #########
     ##################################
