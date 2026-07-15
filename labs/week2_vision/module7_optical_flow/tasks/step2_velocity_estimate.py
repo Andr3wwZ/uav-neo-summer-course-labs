@@ -75,7 +75,66 @@ def update(drone):
     # then reset _interval. The camera moves opposite the scene flow (sign flip). Finish at
     # RUN_TIME, printing the estimate vs. true velocity. See the README (Key terms).
 
-    ###### END PUT CODE HERE #########
+    drone.flight.send_pcmd(PROBE_PITCH, 0, 0, 0)
+    _timer += drone.get_delta_time()
+    _interval += drone.get_delta_time()
+    _frame += 1
+    if _frame % SKIP == 0:
+        image = drone.camera.get_downward_image()
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        if _prev_gray is None or _prev_pts is None or len(_prev_pts) < MIN_PTS:
+            _prev_pts = cv2.goodFeaturesToTrack(gray, **FEATURE_PARAMS)
+            _prev_gray = gray
+            _pix_disp_x = 0
+            _pix_disp_z = 0
+        else:
+            pts, _status, _err = cv2.calcOpticalFlowPyrLK(_prev_gray, gray, _prev_pts, None, **LK_PARAMS)
+
+            if pts is None:
+                _prev_pts = cv2.goodFeaturesToTrack(gray, **FEATURE_PARAMS)
+                _prev_gray = gray
+                _interval = 0.0
+                return False
+
+            _prev_pts = _prev_pts[_status.flatten() == 1]
+            pts_mask = pts[_status.flatten() == 1]
+
+            if len(pts_mask) < MIN_PTS:
+                _prev_pts = cv2.goodFeaturesToTrack(gray, **FEATURE_PARAMS)
+                _prev_gray = gray
+                _interval = 0.0
+                return False
+
+            flow = pts_mask - _prev_pts
+
+            _pix_disp_x = np.mean(flow[:, 0, 0])
+            _pix_disp_z = np.mean(flow[:, 0, 1])
+
+            _prev_pts = pts_mask.reshape(-1, 1, 2)
+
+            _prev_gray = gray
+
+        height = neo_lab.height(drone)
+
+        meter_pix = 2 * height * HFOV_TAN / IMAGE_WIDTH
+
+        _velo_est_x = _pix_disp_x * meter_pix / _interval
+        _velo_est_z = _pix_disp_z * meter_pix / _interval
+        _v = drone.physics.get_linear_velocity()
+
+        
+        
+
+        # print(meter_pix, height, _interval, _velo_est)
+
+        _interval = 0.0
+        print(f"Estimated: ({_velo_est_x:.2f}, {_velo_est_z:.2f})")
+        print(f"Actual:    ({_v[0]:.2f}, {_v[2]:.2f})")
+
+        _done = _timer >= RUN_TIME
+
+    ###### END PUT CODE HERE #########  
     ##################################
     return _done
 
