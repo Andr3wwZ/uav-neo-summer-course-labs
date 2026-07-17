@@ -45,7 +45,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = kp * err + ki * err_int + kd * err_dot
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -73,6 +73,23 @@ def update(drone):
     # use a proportional term (ALT_KP) on height to hold TARGET_HEIGHT. Count as arrived
     # only after MIN_TRAVEL, once speed drops below SETTLE_SPEED for HOLD_TIME. See the
     # README (Key terms) for dead reckoning and the PID law.
+
+    _t += drone.get_delta_time()
+    _pos += drone.physics.get_linear_velocity()[2] * drone.get_delta_time()
+    err = TARGET_DIST - _pos
+    _err_int += err * drone.get_delta_time()
+    err_dot = (err - _prev_err) / drone.get_delta_time()
+    _prev_err = err
+    pitch = pid_control(err, _err_int, err_dot, KP, KI, KD)
+    pitch = uav_utils.clamp(pitch, -PITCH_LIMIT, PITCH_LIMIT)
+    throttle = uav_utils.clamp(ALT_KP * (TARGET_HEIGHT - neo_lab.height(drone)), -THROTTLE_LIMIT, THROTTLE_LIMIT)
+    drone.flight.send_pcmd(pitch, 0, 0, throttle)
+    if _t >= MIN_TRAVEL and abs(drone.physics.get_linear_velocity()[2]) < SETTLE_SPEED:
+        _hold += drone.get_delta_time()
+    else:
+        _hold = 0.0
+    _done = _hold >= HOLD_TIME
+
 
     ###### END PUT CODE HERE #########
     ##################################
