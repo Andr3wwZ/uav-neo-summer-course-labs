@@ -94,7 +94,7 @@ def update(drone):
     row, col = uav_utils.get_contour_center(gate)
     _target_col = col
     err = (col - COL_CENTER) / image.shape[1]
-    _err_int += err
+    _err_int += err * dt
     err_dot = (err - _prev_err) / dt
     _prev_err = err
     yaw = pid_control(err, _err_int, err_dot, KP, KI, KD)
