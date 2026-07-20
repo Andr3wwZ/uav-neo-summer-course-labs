@@ -67,6 +67,35 @@ def update(drone):
     # Hold height with a proportional term (ALT_KP). Clamp each to its limit. Finish when
     # both horizontal errors are under POS_TOL and speed is under SETTLE_SPEED for HOLD_TIME.
 
+    vx, vy, vz = drone.physics.get_linear_velocity()
+    dt = drone.get_delta_time()
+
+    _x += vx * dt
+    _z += vz * dt
+
+    height = neo_lab.height(drone)
+
+    err_right = TARGET_RIGHT - _x
+    err_fwd = TARGET_FWD - _z
+    err_up = TARGET_HEIGHT - height
+
+    roll = uav_utils.clamp(KP_POS * err_right - KD_POS * vx, -ROLL_LIMIT, ROLL_LIMIT,)
+
+    pitch = uav_utils.clamp(KP_POS * err_fwd - KD_POS * vz, -PITCH_LIMIT, PITCH_LIMIT,)
+
+    throttle = uav_utils.clamp(ALT_KP * err_up, -THROTTLE_LIMIT, THROTTLE_LIMIT,)
+
+    speed = (vx**2 + vz**2) ** 0.5
+
+    if abs(err_right) < POS_TOL and abs(err_fwd) < POS_TOL and speed < SETTLE_SPEED:
+        _hold += dt
+        drone.flight.send_pcmd(0, 0, 0, 0)
+    else:
+        _hold = 0.0
+        drone.flight.send_pcmd(pitch, roll, 0, throttle)
+
+    _done = _hold >= HOLD_TIME
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done
