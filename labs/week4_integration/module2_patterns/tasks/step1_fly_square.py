@@ -64,6 +64,25 @@ def update(drone):
     # waypoint, stop and finish. Otherwise steer toward WAYPOINTS[_wp] with the same
     # PD command per axis (roll for right, pitch for forward, throttle for height).
     # When you are within WP_TOL of the current corner on both axes, advance _wp += 1.
+    if _wp < len(WAYPOINTS):
+        vx, vy, vz = drone.physics.get_linear_velocity()
+        dt = drone.get_delta_time()
+        _x += vx * dt
+        _z += vz * dt
+
+        height = neo_lab.height(drone)
+
+        roll = uav_utils.clamp(-KP_POS * (_x - WAYPOINTS[_wp][0]) - KD_POS * vx, -ROLL_LIMIT, ROLL_LIMIT)
+        pitch = uav_utils.clamp(-KP_POS * (_z - WAYPOINTS[_wp][1]) - KD_POS * vz, -PITCH_LIMIT, PITCH_LIMIT)
+        throttle = uav_utils.clamp(ALT_KP * (TARGET_HEIGHT - height), -THROTTLE_LIMIT, THROTTLE_LIMIT)
+
+        drone.flight.send_pcmd(pitch, roll, 0.0, throttle)
+
+        
+        if abs(_x - WAYPOINTS[_wp][0]) < WP_TOL and abs(_z - WAYPOINTS[_wp][1]) < WP_TOL:
+            _wp += 1
+    else:
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################
